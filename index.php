@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Vigenere Cipher Encryption</title>
+    <title>Keamanan Sistem - Kelompok 3</title>
     <link rel="stylesheet" href="style.css">
     <script src="jquery.min.js"></script>
     <script src="swal2.js"></script>
@@ -13,7 +13,7 @@
     <main>
 
         <div class="container">
-            <h2>Vigenere Cipher Encryption</h2>
+            <h2>Vigenere Cipher Encryption + LSB</h2>
             <form method="POST" class="form-container" enctype="multipart/form-data">
                 <div class="form-group">
                     <label for="plaintext">Plaintext :</label>
@@ -21,7 +21,7 @@
                 </div>
                 <div class="form-group">
                     <label for="plaintext">Masukkan gambar :</label>
-                    <input autofocus type="file" id="image" accept="image/png" name="image" required>
+                    <input type="file" id="image" accept="image/png" name="image" required>
                 </div>
                 <div class="form-group">
                     <label for="key">Key hanya huruf dan tidak <a href="https://www.wiblogger.com/2017/12/case-sensitive-dan-case-insensitive.html" target="_blank">Case Sensitive</a> :</label>
@@ -65,6 +65,7 @@
                 return $encrypted_text;
             }
 
+
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                     $plaintext = $_POST['plaintext'];
@@ -74,68 +75,80 @@
 
 
                     $targetDir = 'encrypted/';
-                    $targetFile = $targetDir.basename($_FILES['image']['name']);
-                    $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
+                    $imageFileType = explode('/', $_FILES['image']['type']);
+                    $imageFileType = end($imageFileType);
 
-                    // Periksa apakah file yang diunggah adalah gambar
-                    $allowedTypes = ['jpg', 'jpeg', 'png'];
+                    // Periksa file unggah gambar
+                    $allowedTypes = ['png'];
                     if (in_array($imageFileType, $allowedTypes)) {
+                        $message = $ciphertext;
                         
-                        if (move_uploaded_file($_FILES['image']['tmp_name'], $targetFile)) {
-                            $message = $ciphertext;
+                        $textLengthBin = str_pad(decbin(strlen($message)), 32, '0', STR_PAD_LEFT);
 
-                            embedMessage($targetFile, $message);
+                        $image = imagecreatefrompng($_FILES['image']['tmp_name']);
+                        $width = imagesx($image);
+                        $height = imagesy($image);
 
-                            echo '<div class="result">';
-                            echo 'Pesan telah berhasil disisipkan ke dalam gambar.';
-                            echo '<strong>Plaintext:</strong> ' . $plaintext . '<br>';
-                            echo '<strong>Key:</strong> ' . $key . '<br>';
-                            echo '<strong>Ciphertext:</strong> ' . $ciphertext . '<br>';
-                            echo '</div>';
-                        } else {
-                            echo 'Terjadi kesalahan saat mengunggah gambar.';
+                        // Menyimpan panjang teks dalam 2 byte pertama gambar
+                        $textLength = strlen($message);
+                        $lengthBytes = pack("n", $textLength);
+                        // echo $textLength;
+
+                        // Menyembunyikan panjang teks dalam gambar
+                        imagesetpixel($image,0,0,ord($lengthBytes[0]));
+                        imagesetpixel($image,1,0,ord($lengthBytes[1]));
+
+                        // Menyembunyikan tiap karakter teks dalam bit LSB (Least Significant Bit) dari nilai pixel gambar
+                        $charIndex = 0;
+                        for ($y = 0; $y < $height; $y++) {
+                            for ($x = 2; $x < $width; $x++) {
+                                if ($charIndex < $textLength) {
+                                    $rgb = imagecolorat($image, $x, $y);
+                                    echo $rgb."<br>";
+                                    $r = ($rgb >> 16) & 0xFF;
+                                    $g = ($rgb >> 8) & 0xFF;
+                                    $b = $rgb & 0xFF;
+
+                                    $char = $message[$charIndex];
+                                    $charCode = ord($char);
+                                    // echo $charCode."<br>";
+
+                                    // Menyembunyikan karakter dalam bit LSB dari nilai RGB
+                                    $r = ($r & 0xFE) | (($charCode >> 7) & 0x01);
+                                    $g = ($g & 0xFE) | (($charCode >> 6) & 0x01);
+                                    $b = ($b & 0xFE) | (($charCode >> 5) & 0x01);
+
+                                    $newRgb = ($r << 16) | ($g << 8) | $b;
+                                    imagesetpixel($image, $x, $y, $newRgb);
+
+                                    $charIndex++;
+                                } else {
+                                    break 2; // Menghentikan perulangan jika semua karakter telah disembunyikan
+                                }
+                            }
                         }
+
+                        // Simpan gambar dengan teks tersembunyi ke dalam file baru
+                        imagepng($image, $targetDir.'encoded_'.basename($_FILES['image']['name']));
+                        // unlink($targetDir.basename($_FILES['image']['name']));
+                        imagedestroy($image);
+
+                        echo '<div class="result">';
+                        echo '<strong>Pesan telah berhasil disisipkan ke dalam gambar.</strong><br>';
+                        echo '<a href="' . $targetDir . 'encoded_' . basename($_FILES['image']['name']) . '" download>Unduh Gambar Hasil Encoding</a><br>';
+                        
+                        echo "<br>";
+                        echo '<strong>Plain text:</strong> ' . $plaintext . '<br>';
+                        echo '<strong>Key:</strong> ' . $key . '<br>';
+                        echo '<strong>Cipher text:</strong> ' . $ciphertext . '<br>';
+                        echo '</div>';
                     } else {
-                        echo 'Format gambar tidak valid. Hanya file JPG, JPEG, dan PNG yang diperbolehkan.';
+                        echo '<div class="result">';
+                        echo '<strong>Format gambar tidak valid. Hanya file PNG yang diperbolehkan.</strong>';
+                        echo '</div>';
                         exit;
                     }
                 }
-            }
-            function embedMessage($coverImage, $message)
-            {
-                $outputImage = imagecreatefromjpeg($coverImage);
-                $messageBin = str_pad(decbin(strlen($message)), 8, '0', STR_PAD_LEFT) . $message;
-                $messageLength = strlen($messageBin);
-
-                $index = 0;
-                for ($x = 0; $x < imagesx($outputImage); $x++) {
-                    for ($y = 0; $y < imagesy($outputImage); $y++) {
-                        $rgb = imagecolorat($outputImage, $x, $y);
-
-                        $r = ($rgb >> 16) & 0xFF;
-                        $g = ($rgb >> 8) & 0xFF;
-                        $b = $rgb & 0xFF;
-
-                        if ($index < $messageLength) {
-                            $r = ($r & 0xFE) | $messageBin[$index];
-                            $index++;
-                        }
-                        if ($index < $messageLength) {
-                            $g = ($g & 0xFE) | $messageBin[$index];
-                            $index++;
-                        }
-                        if ($index < $messageLength) {
-                            $b = ($b & 0xFE) | $messageBin[$index];
-                            $index++;
-                        }
-
-                        $color = imagecolorallocate($outputImage, $r, $g, $b);
-                        imagesetpixel($outputImage, $x, $y, $color);
-                    }
-                }
-
-                imagejpeg($outputImage, "output_image.jpg");
-                imagedestroy($outputImage);
             }
             ?>
         </div>

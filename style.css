@@ -1,0 +1,132 @@
+:root {
+    --c1: #FED049;
+    --c2: #CFFDE1;
+    --c3: #3D5656;
+    --c4: #41B167;
+    --c5: #52A34C;
+    --c6: #56A151;
+
+    --g1: #CFFDE1;
+    --g2: #018152;
+    --g3: #52A34C;
+    --g4: #41B167;
+    --g5: #3D5656;
+    --g6: #1D673F;
+    --g7: #1A5736;
+
+    --w1: #fff;
+    --w2: #fafafa;
+    --w3: #e8e8e8;
+    --w4: #d9d9d9;
+    --w5: #c2c2c2;
+
+    --b1: #000;
+    --b2: #1b1e23;
+    --b3: #9F9A9A;
+
+    --r1: #FF0000;
+    --r2: #F14949;
+    ;
+    --r3: #e76666;
+    --r4: #FFCDD2;
+    --r5: #FFB6C1;
+
+    --o1: #FF5000;
+    --o2: #FF9900;
+
+    --bl1: #0000FF;
+    --bl2: #00EBD7;
+
+    --sc1: rgba(113, 73, 198, .7);
+    --sc2: rgba(252, 41, 71, .7);
+    --sc3: rgba(254, 98, 68, .7);
+    --sc4: rgba(255, 222, 185, .7);
+}
+
+*{
+    box-sizing: border-box;
+}
+
+main {
+    font-family: Arial, sans-serif;
+    width: 100%;
+    height: 100vh !important;
+    margin: 0;
+    padding: 0;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.container {
+    min-width: 700px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f2f2f2;
+    border-radius: 5px;
+}
+
+h2 {
+    text-align: center;
+}
+
+.form-group {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+}
+
+.form-group input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    outline: none;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.form-group button {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.form-group button:hover {
+    background-color: #45a049;
+}
+
+.result {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 3px;
+}
+
+.flex{
+    display: flex;
+}
+
+.justify-center{
+    justify-content: center;
+}
+
+.button-container{
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.button-container *{
+    width: min-content;
+}

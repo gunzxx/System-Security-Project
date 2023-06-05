@@ -1,0 +1,23 @@
+{
+	"Sweet alert custom": {
+		"scope": "javascript,typescript",
+		"prefix": "swacc",
+		"body": [
+			"Swal.fire({",
+				"\ttext: $1,",
+				"\tshowCancelButton: true,",
+				"\tcancelButtonText: 'No',",
+				"\tconfirmButtonText: 'Yes',",
+				"\tallowOutsideClick: false,",
+				"\tconfirmButtonColor: 'var(--$2)',",
+            	"\tcancelButtonColor: 'var(--b3)',",
+				"\tcustomClass: {",
+					"\t\tpopup:'swal-wide',",
+				"\t},",
+			"}).then((result)=>{",
+				"\t$3",
+        	"})",
+		],
+		"description": "Log output to console"
+	}
+}

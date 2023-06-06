@@ -83,28 +83,30 @@
                         // echo $textLength;
 
                         // Mengambil tiap karakter teks dari bit LSB (Least Significant Bit) nilai pixel gambar
-                        $text = "";
+                        $ciphertext = "";
                         $charIndex = 0;
+                        $biner = "";
                         $width = imagesx($image);
                         $height = imagesy($image);
                         for ($y = 0; $y < $height; $y++) {
                             for ($x = 2; $x < $width; $x++) {
                                 if ($charIndex < $textLength) {
                                     $rgb = imagecolorat($image, $x, $y);
-                                    echo $rgb;
                                     $r = ($rgb >> 16) & 0xFF;
                                     $g = ($rgb >> 8) & 0xFF;
                                     $b = $rgb & 0xFF;
 
-                                    // Mendapatkan bit LSB dari nilai RGB
-                                    $charCode = (($r & 0x01) << 7) | (($g & 0x01) << 6) | (($b & 0x01) << 5);
-                                    $char = chr($charCode);
-                                    // echo $charCode."<br>";
-                                    $text .= $char;
+                                    $biner .= bindec($r & 0b00000001);
+                                    if(strlen($biner)==8){
+                                        $decimal = bindec($biner);
+                                        $teks = chr($decimal);
+                                        $ciphertext .= $teks;
+                                        $biner='';
+                                    }
 
                                     $charIndex++;
                                 } else {
-                                    break 2; // Menghentikan perulangan jika semua karakter telah diambil
+                                    break 2;
                                 }
                             }
                         }
@@ -112,22 +114,15 @@
                         // Menghapus gambar dari memori
                         imagedestroy($image);
                         
-                        // $plaintext = decrypt_vigenere($extractedText, $key);
-                        $plaintext = '';
+                        $plaintext = decrypt_vigenere($ciphertext, $key);
                         
                         echo '<div class="result">';
-                        echo '<strong>Pesan berhasil diekstrak:</strong><br>';
-                        echo '<p>' . $text . '</p>';
+                        echo '<strong>Pesan berhasil diekstrak :</strong><br>';
+                        echo '<p>' . $ciphertext . '</p>';
                         echo '<strong>Plaintext:</strong> ' . $plaintext . '<br>';
                         echo '<strong>Key:</strong> ' . $key . '<br>';
-                        echo '<strong>Ciphertext:</strong> ' . $text . '<br>';
+                        echo '<strong>Ciphertext:</strong> ' . $ciphertext . '<br>';
                         echo '</div>';
-                        // if (move_uploaded_file($_FILES['image']['tmp_name'], $targetFile)) {
-                        // } else {
-                        //     echo '<div class="result">';
-                        //     echo '<strong>Terjadi kesalahan saat mengunggah gambar.</strong>';
-                        //     echo '</div>';
-                        // }
                     } else {
                         echo '<div class="result">';
                         echo '<strong>Format gambar tidak valid. Hanya file JPG, JPEG, dan PNG yang diperbolehkan.</strong>';

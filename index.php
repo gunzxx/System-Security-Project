@@ -65,14 +65,12 @@
                 return $encrypted_text;
             }
 
-
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                     $plaintext = $_POST['plaintext'];
                     $key = $_POST['key'];
 
                     $ciphertext = encrypt_vigenere($plaintext, $key);
-
 
                     $targetDir = 'encrypted/';
                     $imageFileType = explode('/', $_FILES['image']['type']);
@@ -81,44 +79,45 @@
                     // Periksa file unggah gambar
                     $allowedTypes = ['png'];
                     if (in_array($imageFileType, $allowedTypes)) {
-                        $message = $ciphertext;
+                        $asciiText = str_split($ciphertext);
+                        $textLength = count($asciiText);
                         
-                        $textLengthBin = str_pad(decbin(strlen($message)), 32, '0', STR_PAD_LEFT);
+                        $binLength = '';
+                        for($cIndex = 0; $cIndex < strlen($ciphertext); $cIndex++) {
+                            $binLength .= str_pad(decbin(ord($ciphertext[$cIndex])),8,0,STR_PAD_LEFT);
+                        }
+                        // $textLengthBin = str_pad(decbin(strlen($ciphertext)), 32, '0', STR_PAD_LEFT);
 
                         $image = imagecreatefrompng($_FILES['image']['tmp_name']);
                         $width = imagesx($image);
                         $height = imagesy($image);
 
                         // Menyimpan panjang teks dalam 2 byte pertama gambar
-                        $textLength = strlen($message);
-                        $lengthBytes = pack("n", $textLength);
-                        // echo $textLength;
+                        $lengthBytes = pack("n", strlen($binLength));
 
                         // Menyembunyikan panjang teks dalam gambar
                         imagesetpixel($image,0,0,ord($lengthBytes[0]));
                         imagesetpixel($image,1,0,ord($lengthBytes[1]));
 
                         // Menyembunyikan tiap karakter teks dalam bit LSB (Least Significant Bit) dari nilai pixel gambar
+                        $rgb = [];
                         $charIndex = 0;
                         for ($y = 0; $y < $height; $y++) {
                             for ($x = 2; $x < $width; $x++) {
-                                if ($charIndex < $textLength) {
+                                if ($charIndex < strlen($binLength)) {
                                     $rgb = imagecolorat($image, $x, $y);
-                                    echo $rgb."<br>";
                                     $r = ($rgb >> 16) & 0xFF;
                                     $g = ($rgb >> 8) & 0xFF;
                                     $b = $rgb & 0xFF;
-
-                                    $char = $message[$charIndex];
-                                    $charCode = ord($char);
-                                    // echo $charCode."<br>";
-
+                                    
                                     // Menyembunyikan karakter dalam bit LSB dari nilai RGB
-                                    $r = ($r & 0xFE) | (($charCode >> 7) & 0x01);
-                                    $g = ($g & 0xFE) | (($charCode >> 6) & 0x01);
-                                    $b = ($b & 0xFE) | (($charCode >> 5) & 0x01);
-
-                                    $newRgb = ($r << 16) | ($g << 8) | $b;
+                                    $r = decbin($r & 0xFE);
+                                    
+                                    $charCode = str_pad(($binLength[$charIndex] & $r),8,0,STR_PAD_LEFT);
+                                    $newR = bindec($r) | bindec($charCode);
+                                    // echo ($newR)."<br>";
+                                    
+                                    $newRgb = ($newR << 16) | ($g << 8) | $b;
                                     imagesetpixel($image, $x, $y, $newRgb);
 
                                     $charIndex++;
@@ -128,9 +127,9 @@
                             }
                         }
 
+
                         // Simpan gambar dengan teks tersembunyi ke dalam file baru
                         imagepng($image, $targetDir.'encoded_'.basename($_FILES['image']['name']));
-                        // unlink($targetDir.basename($_FILES['image']['name']));
                         imagedestroy($image);
 
                         echo '<div class="result">';
